@@ -8,6 +8,7 @@ import com.gifex.gifexapi.repositories.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Set;
@@ -18,6 +19,8 @@ public class UserController {
 
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @PostMapping("/user/create")
     public ResponseEntity<?> createUser(@Valid @RequestBody CreateUserDTO createUserDTO){
@@ -27,11 +30,12 @@ public class UserController {
                         .name(ERole.valueOf(role))
                         .build()
         ).collect(Collectors.toSet());
-        UserEntity userEntity = UserEntity.builder()
-                .username(createUserDTO.getUsername())
-                .password(createUserDTO.getPassword())
-                .email(createUserDTO.getEmail())
-                .roles(roles)
+        UserEntity.UserEntityBuilder builder = UserEntity.builder();
+        builder.username(createUserDTO.getUsername());
+        builder.password(passwordEncoder.encode(createUserDTO.getPassword()));
+        builder.email(createUserDTO.getEmail());
+        builder.roles(roles);
+        UserEntity userEntity = builder
                 .build();
         userRepository.save(userEntity);
         return ResponseEntity.ok(userEntity);
